@@ -1,7 +1,9 @@
 Stellaris Script Formatter
 群星脚本格式化工具
+
 A tool to convert Stellaris scripts between human-readable format (with indentation, comments, line breaks) and compact format (required by the game engine).
 一个用于在可读格式（带缩进、注释、换行）和紧凑格式（游戏引擎要求的格式）之间相互转换群星脚本的工具。
+
 ✨ Features
 • 🔄 Bidirectional Conversion: Supports both formatting scripts ↔ converting to game commands
 • 🎨 Beautiful Themes: Provides three visual themes: Space Blue, Night Sky, and Tech Green
