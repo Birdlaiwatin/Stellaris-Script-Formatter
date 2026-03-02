@@ -19,7 +19,6 @@ In Stellaris Mod development, the game scripts must meet the following formattin
 • ❌ No support for line breaks
 • ❌ No support for extra spaces
 • ❌ No support for comments
-• ❌ Must be in single-line compact format
 These issues lead to:
 
 1.Poor readability, making maintenance difficult
@@ -53,7 +52,6 @@ Green tech-themed interface, eye-friendly and comfortable
 • ❌ 不支持换行符
 • ❌ 不支持多余的空格
 • ❌ 不支持注释
-• ❌ 必须为单行紧凑格式
 
 这些问题导致：
 
