@@ -1,7 +1,12 @@
 Stellaris Script Formatter
+
 群星脚本格式化工具
+In Stellaris, the game scripts must meet the following formatting requirements: ❌ No support for line breaks ❌ No support for extra spaces ❌ No support for comments
+
+《群星》游戏脚本必须满足以下格式要求：❌ 不支持换行符 ❌ 不支持多余的空格 ❌ 不支持注释
 
 A tool to convert Stellaris scripts between human-readable format (with indentation, comments, line breaks) and compact format (required by the game engine).
+
 一个用于在可读格式（带缩进、注释、换行）和紧凑格式（游戏引擎要求的格式）之间相互转换群星脚本的工具。
 
 ✨ Features
@@ -15,7 +20,7 @@ A tool to convert Stellaris scripts between human-readable format (with indentat
 • v1.2 (Enhanced Features): Adds theme switching and file output functionality
 • v1.3 (Interface Beautification): New color schemes and modern UI design
 🎯 Core Problems Solved
-In Stellaris Mod development, the game scripts must meet the following formatting requirements:
+In Stellaris, the game scripts must meet the following formatting requirements:
 • ❌ No support for line breaks
 • ❌ No support for extra spaces
 • ❌ No support for comments
@@ -48,7 +53,7 @@ Green tech-themed interface, eye-friendly and comfortable
 • v1.3 (界面美化): 全新配色方案，现代化的UI设计
 🎯 解决的核心问题
 
-在《群星》Mod开发中，游戏脚本必须满足以下格式要求：
+《群星》游戏脚本必须满足以下格式要求：
 • ❌ 不支持换行符
 • ❌ 不支持多余的空格
 • ❌ 不支持注释
