@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Stellaris 脚本转换工具 v1.6 | 可编辑输出+深度高亮</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 主题变量 (同原版) */
+        :root {
+            --bg: #0a0f1a;
+            --secondary-bg: #141e30;
+            --fg: #d4e6ff;
+            --accent-fg: #7ab3ff;
+            --text-bg: #1c263b;
+            --text-fg: #ffffff;
+            --text-border: #2e3f5e;
+            --button-bg: #1f2b44;
+            --button-fg: #d4e6ff;
+            --button-hover-bg: #2a3a5a;
+            --button-active-bg: #314b72;
+            --primary-bg: #2f5e9e;
+            --primary-fg: #ffffff;
+            --primary-hover: #3b6fb8;
+            --primary-active: #4a7fd0;
+            --success-bg: #2e7d32;
+            --success-fg: #ffffff;
+            --success-hover: #388e3c;
+            --highlight: #4d7bff;
+            --secondary-highlight: #7ba6ff;
+            --header-bg: #0f1625;
+            --header-fg: #b0d4ff;
+            --border: #2e3f5e;
+            --scrollbar-bg: #2e3f5e;
+            --scrollbar-thumb: #4d7bff;
+            --scrollbar-track: #1a2538;
+        }
+
+        body {
+            font-family: 'Segoe UI', '微软雅黑', 'Consolas', monospace;
+            background-color: var(--bg);
+            color: var(--fg);
+            margin: 0;
+            padding: 20px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg);
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--header-bg);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .title-area h1 {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--header-fg);
+        }
+        .input-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--accent-fg);
+        }
+        .btn-group-header {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            background: var(--button-bg);
+            color: var(--button-fg);
+            border: none;
+            font-size: 1.2rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .icon-btn:hover {
+            background: var(--button-hover-bg);
+        }
+        .mode-btn {
+            width: auto;
+            padding: 0 16px;
+            font-size: 0.9rem;
+        }
+
+        /* 输入面板 (无右侧预览) */
+        .input-panel {
+            background: var(--secondary-bg);
+            margin: 16px 16px 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .toolbar {
+            background: var(--secondary-bg);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-btn, .copy-input-btn {
+            background: var(--button-bg);
+            color: var(--button-fg);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-right: 8px;
+        }
+        .clear-btn:hover, .copy-input-btn:hover {
+            background: var(--button-hover-bg);
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: var(--text-bg);
+            color: var(--text-fg);
+            border: none;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 14px;
+            resize: vertical;
+            outline: none;
+            line-height: 1.45;
+        }
+        textarea:focus {
+            outline: 1px solid var(--highlight);
+        }
+
+        /* 操作按钮区 */
+        .action-bar {
+            background: var(--secondary-bg);
+            margin: 8px 16px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .action-btn {
+            background: var(--primary-bg);
+            color: var(--primary-fg);
+            border: none;
+            padding: 10px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 160px;
+        }
+        .action-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        .check-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--secondary-bg);
+            padding: 0 12px;
+        }
+
+        /* 输出面板 (可编辑高亮区域) */
+        .output-panel {
+            background: var(--secondary-bg);
+            margin: 8px 16px 16px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background: var(--secondary-bg);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .output-title {
+            font-weight: bold;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .copy-output-btn {
+            background: var(--button-bg);
+            color: var(--button-fg);
+            border: none;
+            padding: 4px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .copy-output-btn:hover {
+            background: var(--button-hover-bg);
+        }
+        .editable-output {
+            background: var(--text-bg);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 14px;
+            min-height: 280px;
+            max-height: 380px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            outline: none;
+            line-height: 1.45;
+            color: var(--text-fg);
+        }
+        .editable-output:focus {
+            outline: 1px solid var(--highlight);
+        }
+        /* 深度高亮颜色类 */
+        .depth-color-0 { color: #FF0000; }
+        .depth-color-1 { color: #FF7F00; }
+        .depth-color-2 { color: #FFFF00; }
+        .depth-color-3 { color: #00FF00; }
+        .depth-color-4 { color: #00FFFF; }
+        .depth-color-5 { color: #0000FF; }
+        .depth-color-6 { color: #8B00FF; }
+        .depth-color-default { color: var(--text-fg); }
+
+        .footer {
+            text-align: center;
+            padding: 12px;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-bg); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb); }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: var(--secondary-bg);
+            border-radius: 24px;
+            width: 460px;
+            max-width: 90%;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .modal-header { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: var(--accent-fg); }
+        .modal-row { margin-bottom: 20px; }
+        .modal-row label { display: block; margin-bottom: 6px; font-weight: 500; }
+        select, .modal-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--text-bg);
+            color: var(--text-fg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            background: var(--button-bg);
+            color: var(--button-fg);
+            cursor: pointer;
+        }
+        .modal-btn-primary { background: var(--primary-bg); color: white; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <div class="title-area">
+            <h1>✨ Stellaris 脚本转换工具</h1>
+            <span class="input-label">📝 输入原始脚本：</span>
+        </div>
+        <div class="btn-group-header">
+            <button id="themeToggleBtn" class="icon-btn" title="随机切换主题">🌌</button>
+            <button id="settingsBtn" class="icon-btn" title="设置">⚙️</button>
+            <button id="outputModeBtn" class="icon-btn mode-btn">📄 界面输出</button>
+        </div>
+    </div>
+
+    <!-- 输入区域 (无预览) -->
+    <div class="input-panel">
+        <div class="toolbar">
+            <div>
+                <button id="clearInputBtn" class="clear-btn">🗑️ 清空输入框</button>
+                <button id="copyInputBtn" class="copy-input-btn">📋 复制输入内容</button>
+            </div>
+            <span style="font-size:12px">✏️ 可直接编辑脚本</span>
+        </div>
+        <textarea id="inputRaw" placeholder="粘贴 Stellaris 脚本...&#10;支持 if/limit/ 大括号嵌套等，支持 Ctrl+Z 撤销" spellcheck="false"></textarea>
+    </div>
+
+    <!-- 操作按钮组 -->
+    <div class="action-bar">
+        <button id="toFormattedBtn" class="action-btn">📖 指令格式化 →</button>
+        <button id="toCompactBtn" class="action-btn">➡️ 转化为指令</button>
+        <div class="check-option">
+            <input type="checkbox" id="simplifyCheckbox">
+            <label for="simplifyCheckbox">⚡ 最简化 (控制台≤1000字符)</label>
+        </div>
+    </div>
+
+    <!-- 输出区域 (可编辑 + 深度高亮) -->
+    <div class="output-panel">
+        <div class="output-header">
+            <div class="output-title">
+                <span>📤 转换结果 (可编辑 · 括号深度高亮)</span>
+                <button id="copyOutputBtn" class="copy-output-btn">📋 复制输出内容</button>
+            </div>
+            <span id="charCountLabel">字符数: 0</span>
+        </div>
+        <div id="outputEditable" class="editable-output" contenteditable="true"></div>
+    </div>
+    <div class="footer">
+        v1.6 | 输出框支持直接编辑/增删，深度高亮实时同步 | Ctrl+Z 撤销输入框编辑
+    </div>
+</div>
+
+<!-- 设置模态窗 -->
+<div id="settingsModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-header">⚙️ 设置</div>
+        <div class="modal-row">
+            <label>🎨 主题选择</label>
+            <select id="themeSelect">
+                <option value="space_blue">🌌 太空蓝 (深色)</option>
+                <option value="dark_star">🌃 暗夜星辰 (深色)</option>
+                <option value="tech_green">🌿 科技绿 (深色)</option>
+                <option value="dawn_white">☀️ 晨曦白 (浅色)</option>
+                <option value="minimal_gray">🌤️ 极简灰 (浅色)</option>
+            </select>
+        </div>
+        <div class="modal-row">
+            <label>💾 输出文件名称 (文件模式时使用)</label>
+            <input type="text" id="outputFileName" placeholder="例如: output_script.txt" class="modal-input">
+        </div>
+        <div class="modal-buttons">
+            <button id="modalCloseBtn" class="modal-btn">取消</button>
+            <button id="modalSaveBtn" class="modal-btn modal-btn-primary">保存设置</button>
+        </div>
+        <hr style="margin:16px 0; border-color:var(--border)">
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="checkUpdateBtn" class="modal-btn">🔍 检查更新</button>
+            <button id="aboutBtn" class="modal-btn">📌 关于</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 主题 ----------
+    const THEMES = {
+        space_blue: { "--bg": "#0a0f1a", "--secondary-bg": "#141e30", "--fg": "#d4e6ff", "--accent-fg": "#7ab3ff", "--text-bg": "#1c263b", "--text-fg": "#ffffff", "--text-border": "#2e3f5e", "--button-bg": "#1f2b44", "--button-fg": "#d4e6ff", "--button-hover-bg": "#2a3a5a", "--button-active-bg": "#314b72", "--primary-bg": "#2f5e9e", "--primary-fg": "#ffffff", "--primary-hover": "#3b6fb8", "--primary-active": "#4a7fd0", "--success-bg": "#2e7d32", "--success-fg": "#ffffff", "--success-hover": "#388e3c", "--highlight": "#4d7bff", "--secondary-highlight": "#7ba6ff", "--header-bg": "#0f1625", "--header-fg": "#b0d4ff", "--border": "#2e3f5e", "--scrollbar-bg": "#2e3f5e", "--scrollbar-thumb": "#4d7bff", "--scrollbar-track": "#1a2538" },
+        dark_star: { "--bg": "#121212", "--secondary-bg": "#1e1e1e", "--fg": "#e0e0e0", "--accent-fg": "#bb86fc", "--text-bg": "#212121", "--text-fg": "#ffffff", "--text-border": "#333333", "--button-bg": "#2d2d2d", "--button-fg": "#e0e0e0", "--button-hover-bg": "#3a3a3a", "--primary-bg": "#6200ee", "--primary-fg": "#ffffff", "--primary-hover": "#7c4dff", "--success-bg": "#03dac6", "--success-fg": "#000000", "--success-hover": "#00e5c3", "--highlight": "#bb86fc", "--header-bg": "#0a0a0a", "--header-fg": "#e0e0e0", "--border": "#333333", "--scrollbar-bg": "#333333", "--scrollbar-thumb": "#6200ee", "--scrollbar-track": "#1a1a1a" },
+        tech_green: { "--bg": "#0a1f0a", "--secondary-bg": "#132813", "--fg": "#c8ffc8", "--accent-fg": "#7dff7d", "--text-bg": "#1a2e1a", "--text-fg": "#ffffff", "--text-border": "#2a4a2a", "--button-bg": "#1e3a1e", "--button-fg": "#c8ffc8", "--button-hover-bg": "#2a4a2a", "--primary-bg": "#2a7d2a", "--primary-fg": "#ffffff", "--primary-hover": "#3a8d3a", "--success-bg": "#4caf50", "--success-fg": "#ffffff", "--success-hover": "#5cbf60", "--highlight": "#4caf50", "--header-bg": "#0a1a0a", "--header-fg": "#a8ffa8", "--border": "#2a4a2a", "--scrollbar-bg": "#2a4a2a", "--scrollbar-thumb": "#4caf50", "--scrollbar-track": "#1a2e1a" },
+        dawn_white: { "--bg": "#fdf5e6", "--secondary-bg": "#fff2df", "--fg": "#5d4e3d", "--accent-fg": "#ffb347", "--text-bg": "#ffffff", "--text-fg": "#5d4e3d", "--text-border": "#d2b48c", "--button-bg": "#f0e0c0", "--button-fg": "#5d4e3d", "--button-hover-bg": "#e6d0a0", "--primary-bg": "#ff8c42", "--primary-fg": "#ffffff", "--primary-hover": "#ff9f5c", "--success-bg": "#8bc34a", "--success-fg": "#ffffff", "--success-hover": "#9ccc65", "--highlight": "#ffb347", "--header-bg": "#fff2df", "--header-fg": "#5d4e3d", "--border": "#d2b48c", "--scrollbar-bg": "#d2b48c", "--scrollbar-thumb": "#ff8c42", "--scrollbar-track": "#f0e0c0" },
+        minimal_gray: { "--bg": "#e6f0fa", "--secondary-bg": "#ffffff", "--fg": "#2c3e50", "--accent-fg": "#4aa3df", "--text-bg": "#ffffff", "--text-fg": "#2c3e50", "--text-border": "#b0bec5", "--button-bg": "#e0e5ec", "--button-fg": "#2c3e50", "--button-hover-bg": "#d0d9e8", "--primary-bg": "#4aa3df", "--primary-fg": "#ffffff", "--primary-hover": "#5eb6f0", "--success-bg": "#66bb6a", "--success-fg": "#ffffff", "--success-hover": "#7ecb7f", "--highlight": "#4aa3df", "--header-bg": "#ffffff", "--header-fg": "#2c3e50", "--border": "#b0bec5", "--scrollbar-bg": "#b0bec5", "--scrollbar-thumb": "#4aa3df", "--scrollbar-track": "#e0e5ec" }
+    };
+    let currentTheme = "space_blue";
+    let outputMode = false;
+    let outputFileName = "stellaris_output.txt";
+    let simplifyMax1000 = false;
+    let isUpdatingOutput = false;  // 防止循环更新
+
+    // DOM 元素
+    const root = document.documentElement;
+    const inputTextarea = document.getElementById('inputRaw');
+    const outputEditable = document.getElementById('outputEditable');
+    const charCountSpan = document.getElementById('charCountLabel');
+    const simplifyCheck = document.getElementById('simplifyCheckbox');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const outputModeBtn = document.getElementById('outputModeBtn');
+    const clearBtn = document.getElementById('clearInputBtn');
+    const copyInputBtn = document.getElementById('copyInputBtn');
+    const copyOutputBtn = document.getElementById('copyOutputBtn');
+    const toFormatted = document.getElementById('toFormattedBtn');
+    const toCompact = document.getElementById('toCompactBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const themeSelect = document.getElementById('themeSelect');
+    const outputFileNameInput = document.getElementById('outputFileName');
+    const modalSave = document.getElementById('modalSaveBtn');
+    const modalClose = document.getElementById('modalCloseBtn');
+    const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+
+    // ========== 括号深度高亮渲染 (纯文本 -> HTML) ==========
+    const COLOR_CLASS = ["depth-color-0","depth-color-1","depth-color-2","depth-color-3","depth-color-4","depth-color-5","depth-color-6"];
+    function getDepthHtml(text) {
+        if (!text) return '';
+        let depth = 0;
+        let html = '';
+        for (let ch of text) {
+            if (ch === '(' || ch === '{' || ch === '[') {
+                html += `<span class="${COLOR_CLASS[depth % COLOR_CLASS.length]}">${escapeHtml(ch)}</span>`;
+                depth++;
+            } else if (ch === ')' || ch === '}' || ch === ']') {
+                depth = Math.max(0, depth - 1);
+                html += `<span class="${COLOR_CLASS[depth % COLOR_CLASS.length]}">${escapeHtml(ch)}</span>`;
+            } else {
+                html += `<span class="${COLOR_CLASS[depth % COLOR_CLASS.length]}">${escapeHtml(ch)}</span>`;
+            }
+        }
+        return html;
+    }
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 保存/恢复光标位置 (基于Range)
+    function saveCaretPosition(element) {
+        const sel = window.getSelection();
+        if (sel.rangeCount === 0) return null;
+        const range = sel.getRangeAt(0);
+        if (!element.contains(range.commonAncestorContainer)) return null;
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        const startOffset = preCaretRange.toString().length;
+        return { startOffset, endOffset: startOffset + range.toString().length };
+    }
+    function restoreCaretPosition(element, pos) {
+        if (!pos) return;
+        const sel = window.getSelection();
+        const range = document.createRange();
+        let charIndex = 0;
+        let nodeStack = [element];
+        let foundStart = false, startContainer = null, startOffset = 0;
+        let foundEnd = false, endContainer = null, endOffset = 0;
+        while (nodeStack.length > 0 && (!foundStart || !foundEnd)) {
+            const node = nodeStack.pop();
+            if (node.nodeType === Node.TEXT_NODE) {
+                const textLen = node.textContent.length;
+                if (!foundStart && charIndex + textLen >= pos.startOffset) {
+                    startContainer = node;
+                    startOffset = pos.startOffset - charIndex;
+                    foundStart = true;
+                }
+                if (!foundEnd && charIndex + textLen >= pos.endOffset) {
+                    endContainer = node;
+                    endOffset = pos.endOffset - charIndex;
+                    foundEnd = true;
+                }
+                charIndex += textLen;
+            } else {
+                let children = Array.from(node.childNodes).reverse();
+                for (let child of children) nodeStack.push(child);
+            }
+        }
+        if (startContainer && endContainer) {
+            range.setStart(startContainer, Math.min(startOffset, startContainer.textContent.length));
+            range.setEnd(endContainer, Math.min(endOffset, endContainer.textContent.length));
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    }
+
+    // 核心: 更新输出框内容并保留高亮、光标 (给定纯文本)
+    function setOutputTextWithHighlight(text) {
+        if (isUpdatingOutput) return;
+        isUpdatingOutput = true;
+        const caret = saveCaretPosition(outputEditable);
+        const html = getDepthHtml(text);
+        outputEditable.innerHTML = html;
+        if (caret) restoreCaretPosition(outputEditable, caret);
+        charCountSpan.innerText = `字符数: ${text.length}`;
+        isUpdatingOutput = false;
+    }
+
+    // 获取输出框纯文本 (去除标签)
+    function getOutputPlainText() {
+        return outputEditable.innerText || '';
+    }
+
+    // 监听输出框编辑事件: 实时同步高亮
+    function onOutputEdit() {
+        if (isUpdatingOutput) return;
+        const plain = getOutputPlainText();
+        setOutputTextWithHighlight(plain);
+    }
+
+    // 外部调用更新结果 (格式化/转换)
+    function updateOutputArea(text) {
+        setOutputTextWithHighlight(text);
+    }
+
+    // ========== 格式化核心算法 (与原版一致) ==========
+    function formatStellarisScript(text) {
+        let processed = text.replace(/>\s*=/g, '>=').replace(/<\s*=/g, '<=');
+        processed = processed.replace(/\s+/g, ' ');
+        processed = processed.replace(/([{}])/g, ' $1 ');
+        processed = processed.replace(/(?<![<>])=(?!=)/g, ' = ');
+        processed = processed.replace(/(?<!<)(?<!>)(?<!=)<(?!=)/g, ' < ');
+        processed = processed.replace(/(?<!<)(?<!>)(?<!=)>(?!=)/g, ' > ');
+        processed = processed.replace(/\s+/g, ' ').trim();
+        let tokens = processed.split(/\s+/);
+        if (!tokens.length) return "";
+        let result = [];
+        let indent = 0;
+        let i = 0;
+        let lastWasClosing = false;
+        while (i < tokens.length) {
+            let tok = tokens[i];
+            if (tok === '{') {
+                if (result.length && result[result.length-1].endsWith('\n')) result[result.length-1] = result[result.length-1].replace(/\n$/, '') + ' {\n';
+                else result.push(' {\n');
+                indent++;
+                lastWasClosing = false;
+                i++;
+                continue;
+            }
+            if (tok === '}') {
+                indent = Math.max(0, indent-1);
+                if (lastWasClosing && indent>0 && i+1 < tokens.length && tokens[i+1] !== '}') result.push('\n');
+                result.push('    '.repeat(indent) + '}\n');
+                lastWasClosing = true;
+                i++;
+                continue;
+            }
+            if (i+1 < tokens.length && ['=', '>=', '<=', '<', '>'].includes(tokens[i+1])) {
+                let key = tok;
+                let op = tokens[i+1];
+                i += 2;
+                let valParts = [];
+                while (i < tokens.length && !['{','}'].includes(tokens[i]) && !(i+1 < tokens.length && ['=','>=','<=','<','>'].includes(tokens[i+1]))) {
+                    valParts.push(tokens[i]);
+                    i++;
+                }
+                let value = valParts.join(' ');
+                result.push('    '.repeat(indent) + `${key} ${op} ${value}\n`);
+                lastWasClosing = false;
+                if (i < tokens.length && tokens[i] === '{') continue;
+            } else {
+                result.push('    '.repeat(indent) + tok + '\n');
+                lastWasClosing = false;
+                i++;
+            }
+        }
+        let output = result.join('').replace(/\n{3,}/g, '\n\n');
+        return output.trim() + '\n';
+    }
+
+    function compactStellarisScript(text) {
+        const lines = text.split(/\r?\n/);
+        let blocks = [];
+        let currentBlock = [];
+        let braceDepth = 0;
+        let inBlock = false;
+        for (let line of lines) {
+            let stripped = line.trim();
+            if (stripped.startsWith('#')) continue;
+            if (stripped === '') {
+                if (inBlock && currentBlock.length) currentBlock.push('');
+                continue;
+            }
+            let openBraces = (line.match(/{/g) || []).length;
+            let closeBraces = (line.match(/}/g) || []).length;
+            if (!inBlock && openBraces > 0) {
+                inBlock = true;
+                braceDepth = openBraces - closeBraces;
+            } else {
+                braceDepth += openBraces - closeBraces;
+            }
+            currentBlock.push(line);
+            if (inBlock && braceDepth <= 0) {
+                let formatted = removeCommentsAndFormatBlock(currentBlock);
+                if (formatted) blocks.push(formatted);
+                currentBlock = [];
+                inBlock = false;
+                braceDepth = 0;
+            }
+        }
+        if (currentBlock.length) {
+            let formatted = removeCommentsAndFormatBlock(currentBlock);
+            if (formatted) blocks.push(formatted);
+        }
+        return blocks.join('\n');
+    }
+    function removeCommentsAndFormatBlock(blockLines) {
+        let processedLines = [];
+        let strMap = new Map();
+        let strCounter = 0;
+        for (let line of blockLines) {
+            let commentless = line.split('#')[0].trimEnd();
+            if (commentless === '') continue;
+            commentless = commentless.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
+                let ph = `__STR_${strCounter++}__`;
+                strMap.set(ph, match);
+                return ph;
+            });
+            commentless = commentless.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, (match) => {
+                let ph = `__STR_${strCounter++}__`;
+                strMap.set(ph, match);
+                return ph;
+            });
+            processedLines.push(commentless);
+        }
+        if (!processedLines.length) return "";
+        let result = processedLines.join(' ');
+        let idents = [...new Set(result.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [])];
+        let idMap = new Map();
+        let idCounter = 0;
+        for (let w of idents) {
+            if (w.includes('_') && !strMap.has(w)) {
+                let ph = `__ID_${idCounter++}__`;
+                idMap.set(ph, w);
+                result = result.split(w).join(ph);
+            }
+        }
+        result = result.replace(/\s+/g, ' ');
+        result = result.replace(/\s*([=<>!]=?|\+=|-=|\*=|==|!=|>=|<=|>|<)\s*/g, ' $1 ');
+        result = result.replace(/\s*([{}[\](),;])\s*/g, '$1 ');
+        result = result.replace(/\s+/g, ' ').trim();
+        for (let [ph, orig] of idMap) result = result.split(ph).join(orig);
+        for (let [ph, orig] of strMap) result = result.split(ph).join(orig);
+        return result;
+    }
+    function simplifyOutput(text) {
+        let res = text.replace(/(?<=\S)\s+([=<>!]=?)\s+(?=\S)/g, '$1');
+        res = res.replace(/\s+{/g, '{').replace(/{\s+/g, '{');
+        res = res.replace(/\s+}/g, '}').replace(/}\s+/g, '}');
+        return res;
+    }
+
+    function toFormattedAction() {
+        let src = inputTextarea.value;
+        if (!src.trim()) { updateOutputArea("⚠️ 请在输入框中粘贴内容。"); return; }
+        try { let res = formatStellarisScript(src); updateOutputArea(res); if (outputMode) downloadFile(res, outputFileName || "formatted_output.txt"); } 
+        catch(e) { updateOutputArea(`格式化出错: ${e.message}`); }
+    }
+    function toCompactAction() {
+        let src = inputTextarea.value;
+        if (!src.trim()) { updateOutputArea("⚠️ 请在输入框中粘贴内容。"); return; }
+        try { let res = compactStellarisScript(src); if (simplifyMax1000) res = simplifyOutput(res); updateOutputArea(res); if (outputMode) downloadFile(res, outputFileName || "compact_output.txt"); } 
+        catch(e) { updateOutputArea(`转换出错: ${e.message}`); }
+    }
+    function downloadFile(content, filename) {
+        const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    // 复制功能
+    function copyToClipboard(text, successMsg) {
+        navigator.clipboard.writeText(text).then(() => alert(successMsg)).catch(() => alert("复制失败"));
+    }
+    copyInputBtn.addEventListener('click', () => copyToClipboard(inputTextarea.value, "✅ 输入内容已复制"));
+    copyOutputBtn.addEventListener('click', () => copyToClipboard(getOutputPlainText(), "✅ 输出内容已复制"));
+
+    // 主题
+    function applyTheme(themeKey) {
+        const theme = THEMES[themeKey];
+        if (!theme) return;
+        for (let [key, val] of Object.entries(theme)) root.style.setProperty(key, val);
+        currentTheme = themeKey;
+        localStorage.setItem('stellaris_theme', themeKey);
+        const themeIcons = {space_blue:"🌌", dark_star:"🌃", tech_green:"🌿", dawn_white:"☀️", minimal_gray:"🌤️"};
+        themeToggleBtn.innerText = themeIcons[themeKey] || "🎨";
+        themeSelect.value = themeKey;
+        // 刷新输出高亮样式
+        const plain = getOutputPlainText();
+        setOutputTextWithHighlight(plain);
+    }
+    function randomTheme() {
+        const keys = Object.keys(THEMES);
+        let newKey = keys[Math.floor(Math.random() * keys.length)];
+        if (newKey === currentTheme && keys.length>1) newKey = keys.find(k=>k!==currentTheme);
+        applyTheme(newKey);
+    }
+    function loadSettings() {
+        const savedTheme = localStorage.getItem('stellaris_theme');
+        if (savedTheme && THEMES[savedTheme]) applyTheme(savedTheme); else applyTheme('space_blue');
+        const mode = localStorage.getItem('outputMode');
+        outputMode = (mode === 'true');
+        outputModeBtn.innerText = outputMode ? "📁 文件输出" : "📄 界面输出";
+        const fileName = localStorage.getItem('outputFileName');
+        if (fileName) outputFileName = fileName;
+        outputFileNameInput.value = outputFileName;
+        const simp = localStorage.getItem('simplifyMax');
+        simplifyMax1000 = (simp === 'true');
+        simplifyCheck.checked = simplifyMax1000;
+    }
+    function saveSettingsToLocal() {
+        localStorage.setItem('outputMode', outputMode);
+        localStorage.setItem('outputFileName', outputFileName);
+        localStorage.setItem('simplifyMax', simplifyMax1000);
+    }
+
+    // 事件绑定
+    inputTextarea.addEventListener('input', () => {});
+    clearBtn.addEventListener('click', () => { inputTextarea.value = ''; inputTextarea.focus(); });
+    toFormatted.addEventListener('click', toFormattedAction);
+    toCompact.addEventListener('click', toCompactAction);
+    simplifyCheck.addEventListener('change', (e) => { simplifyMax1000 = e.target.checked; localStorage.setItem('simplifyMax', simplifyMax1000); });
+    themeToggleBtn.addEventListener('click', randomTheme);
+    outputModeBtn.addEventListener('click', () => { outputMode = !outputMode; outputModeBtn.innerText = outputMode ? "📁 文件输出" : "📄 界面输出"; localStorage.setItem('outputMode', outputMode); });
+    settingsBtn.addEventListener('click', () => { settingsModal.style.display = 'flex'; themeSelect.value = currentTheme; outputFileNameInput.value = outputFileName; });
+    modalClose.addEventListener('click', () => settingsModal.style.display = 'none');
+    modalSave.addEventListener('click', () => {
+        const newTheme = themeSelect.value;
+        if (newTheme && THEMES[newTheme]) applyTheme(newTheme);
+        outputFileName = outputFileNameInput.value.trim() || "stellaris_output.txt";
+        localStorage.setItem('outputFileName', outputFileName);
+        settingsModal.style.display = 'none';
+        saveSettingsToLocal();
+    });
+    checkUpdateBtn.addEventListener('click', () => { window.open("https://github.com/Birdlaiwatin/Stellaris-Script-Formatter", "_blank"); alert("已为您打开项目主页，请查看最新版本。"); });
+    aboutBtn.addEventListener('click', () => { alert("Stellaris 脚本转换工具 v1.6\n专为《群星》脚本转换格式设计\n功能：指令格式化 ⇄ 紧凑脚本\n输出框支持直接编辑且括号深度七彩高亮\n支持文件输出模式。"); });
+    window.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; });
+    // 输出框编辑监听
+    outputEditable.addEventListener('input', onOutputEdit);
+    loadSettings();
+    updateOutputArea("");
+</script>
+</body>
+</html>
